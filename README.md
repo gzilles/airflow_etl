@@ -12,9 +12,9 @@ O objetivo desse projeto é trabalhar através de exercícios práticos os conce
 - Data Lake
 - Processamento de dados distribuído
 
-O projeto consiste em construir um pipeline de dados para a empresa Vamos Juntos que faça a extração dos dados no MongoDB e na API do IBGE e deposite no Data Lake da empresa. Após a ingestão dos dados no Data Lake, você deve disponibilizar o dado tratado e filtrado apenas para o público de interesse da empresa em um DW. Com os dados no DW, você vai realizar algumas consultas e extrair resultados importantes para a #VamosJuntos.
+O projeto consiste em construir um pipeline de dados para a empresa Vamos Juntos que faça a extração dos dados no MongoDB e na API do IBGE e deposite no Data Lake da empresa. Após a ingestão dos dados no Data Lake, dado tratado e filtrado precisa ser disponibilizado apenas para o público de interesse da empresa em um DW. Com os dados no DW, você vai realizar algumas consultas e extrair resultados importantes para a #VamosJuntos.
 
-Foi criada uma estrutura de Docker-compose para utilização do Apache Airflow como ferramenta de orquestração da minha ETL. Caso não saiba como instalar Docker Community Edition e Docker Compose vou deixar a instruções para o Ubuntu abaixo:
+Foi criada uma estrutura de Docker-compose para utilização do Apache Airflow como ferramenta de orquestração da minha ETL, pois foi uma das ferramentas que mais estudei durante o curso. Caso não saiba como instalar Docker Community Edition e Docker Compose vou deixar a instruções para o Ubuntu abaixo:
 
 1) Instalando os pacotes necessários para o Docker e configurando o repositório.
 
@@ -104,26 +104,35 @@ http://localhot:8080
 
 Na aba Admin/Variable da interface web você deve configurar as variáveis sensíveis de ambiente conforme abaixo:
 
-<figura>
+![alt text](https://github.com/gzilles/airflow_etl/blob/main/images/variables.JPG?raw=true)
 
-Na console do AWS vamos criar um usuário e configurar chaves de acesso e permissões de segurança para acessar o S3 conforme abaixo (não é aconselhável por questões de segurança usar as credenciais do usuário root para essa finalidade). Essas chaves de acesso devem ser configuradas nas variáveis de ambiente do Airflow.
+Na console do AWS vamos criar um usuário e configurar chaves de acesso e permissões de segurança para acessar o S3 conforme abaixo (não é aconselhável por questões de segurança usar as credenciais do usuário root para essa finalidade e as credenciais abaixo não são mais validas). Essas chaves de acesso devem ser configuradas nas variáveis de ambiente do Airflow.
 
-<figura>
+![alt text](https://github.com/gzilles/airflow_etl/blob/main/images/access%20key.JPG?raw=true)
   
 Também na console do AWS vamos criar um banco de dados RDS. Você deve utilizar a instância MySQL 8.0.20 Free Tier db.t2.micro com 20 gb para ter direito a verão gratuita. O host, o usuário e a senha criadas devem ser configurados nas variáveis de ambiente do Airflow. Não esqueça de habilitar o acesso público e de liberar o acesso externo na porta 3306 em VPC Security Group. 
 
-<figura>
+![alt text](https://github.com/gzilles/airflow_etl/blob/main/images/rds.JPG?raw=true)
   
-Abaixo estão o usuário e a senha para acesso do MongoDB na nuvem e mas não sei até quando ela vai ficar no ar. Então em breve vou adicionar uma instância do MongoDB em um container local com os dados para importação. Por enquanto essas credenciais devem ser configuradas nas variáveis de ambiente do Airflow.
+Abaixo estão o usuário e a senha disponibilizadas para acesso do MongoDB na nuvem  mas não sei até quando ele vai ficar no ar. Então em breve vou adicionar uma instância do MongoDB em um container local com os dados para importação. Por enquanto essas credenciais devem ser configuradas nas variáveis de ambiente do Airflow.
 
 ```
 username: estudante_igti
 password: SRwkJTDz2nA28ME9
 ```
 
+No AWS S3 vamos criar 2 buckets que servirão como base do nosso Data Lake.
+
+```
+vamos-juntos-landing-us-est-1
+vamos-juntos-transforming-us-est-1
+```
+
+![alt text](https://github.com/gzilles/airflow_etl/blob/main/images/buckets.JPG?raw=true)
+
 Na pasta dags se encontra o arquivo etl_ibge.py que será explicado abaixo:
 
-1. Essa é a estrutura básica do arquivo com os módulos externos importados, os argumentos padrões da DAG, a instância da DAG e tarefas declaradas usando a nova função de decoradores presente na versão 2 do Airflow. As tarefas foram retiradas pois serão explicadas separadamente mais adiante e por último temos as dependências das tarefas e a DAG instanciada.
+1. Essa é a estrutura básica do arquivo com os módulos externos importados, os argumentos padrões da DAG, a instância da DAG e tarefas declaradas usando a nova função de decoradores presente na versão 2 do Airflow. As tarefas foram retiradas do corpo pois serão explicadas separadamente mais adiante e por último temos as dependências das tarefas e a DAG instanciada.
 ```
 # External librarys
 from airflow.decorators import dag, task
@@ -405,3 +414,46 @@ def ingest_to_mysql(key_file, param):
     df.to_sql(param, con=engine, index=False, if_exists='replace', method='multi', chunksize=1000)
 ```
 
+Agora que sabemos nosso código em detalhe vamos voltar para a página inicial do Airflow onde nossa DAG aparecera conforme a imagem abaixo.
+
+![alt text](https://github.com/gzilles/airflow_etl/blob/main/images/dag.JPG?raw=true)
+
+Para demonstração a DAG foi setada sem um intervalo de agendamento, então precisamos ligar ela deslizando o botão do lado esquerdo e rodando ela manualmente no botão de play da direita em actions. É importante lembrar que ela só iniciará se estiver ligada. As imagens abaixo demonstram como as tarefas são agendadas e executadas.
+
+![alt text](https://github.com/gzilles/airflow_etl/blob/main/images/running_dag.JPG?raw=true)
+
+Depois de ativada podemos acompanhar as tarefas em modo árvore.
+
+![alt text](https://github.com/gzilles/airflow_etl/blob/main/images/tree_view.JPG?raw=true)
+
+Podemos visualizar em tempo real no modo gráfico.
+
+![alt text](https://github.com/gzilles/airflow_etl/blob/main/images/graph_view.JPG?raw=true)
+
+Verificar a duração da DAG e suas tarefas.
+
+![alt text](https://github.com/gzilles/airflow_etl/blob/main/images/gantt.JPG?raw=true)
+
+Ao acessar a nossa landing zone podemos verificar os arquivos json salvos.
+
+![alt text](https://github.com/gzilles/airflow_etl/blob/main/images/landing_zone.JPG?raw=true)
+
+Depois na nossa transforming zone estão os arquivos parquet compactados.
+
+![alt text](https://github.com/gzilles/airflow_etl/blob/main/images/transforming_zone.JPG?raw=true)
+
+E finalmente verificamos que a tabela localidades foi criada e está com dados inseridos no MySQL.
+
+![alt text](https://github.com/gzilles/airflow_etl/blob/main/images/localidades.jpg?raw=true)
+
+A mesma coisa aconteceu com a tabela pnad20023.
+
+![alt text](https://github.com/gzilles/airflow_etl/blob/main/images/pnad20023.jpg?raw=true)
+
+Enfim agora estamos prontos para realizar as pesquisas e correlações necessárias para atingir os resultados esperados pelo cliente.
+
+Essa é a primeira versão publicada, já foram feitas várias melhorias como trabalhar com os arquivos apenas em memória sem salvar localmente. Meu próximo passo é transformar essas tarefas em funções Lambda do AWS e usar o Airflow apenas para orquestrar e disparar as Lambdas tirando todo processamento local da máquina. Sei que ainda tem muita coisa a melhorar e fico aberto a opiniões, sugestões e críticas construtivas de todos.
+
+
+Gustavo Zilles
+gzilles@hotmail.com

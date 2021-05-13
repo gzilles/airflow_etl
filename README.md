@@ -111,7 +111,7 @@ Na console do AWS vamos criar um usuário e configurar chaves de acesso e permis
 
 ![alt text](https://github.com/gzilles/airflow_etl/blob/main/images/access%20key.JPG?raw=true)
   
-Também na console do AWS vamos criar um banco de dados RDS. Você deve utilizar a instância MySQL 8.0.20 Free Tier db.t2.micro com 20 gb para ter direito a verão gratuita. O host, o usuário e a senha criadas também devem ser configurados nas variáveis de ambiente do Airflow. Não esqueça de habilitar o acesso público e de liberar o acesso externo na porta 3306 em VPC Security Group. 
+Também na console do AWS vamos criar um banco de dados RDS. Você deve utilizar a instância MySQL 8.0.20 Free Tier db.t2.micro com 20 gb para ter direito a versão gratuita. O host, o usuário e a senha criadas também devem ser configurados nas variáveis de ambiente do Airflow. Não esqueça de habilitar o acesso público e de liberar o acesso externo na porta 3306 em VPC Security Group. 
 
 ![alt text](https://github.com/gzilles/airflow_etl/blob/main/images/rds.JPG?raw=true)
  
